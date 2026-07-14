@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="LiteLLM AutoRouter runs on your infrastructure, works with your existing LiteLLM Proxy, and intelligently routes every request—without an ML training project." />
+  <title>LiteLLM AutoRouter — Intelligent routing on your infrastructure</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚅</text></svg>">
+  <style>
+    :root {
+      --bg: #f5f7f2;
+      --paper: #ffffff;
+      --ink: #11150f;
+      --muted: #667064;
+      --line: #dce3d8;
+      --green: #4dff87;
+      --green-dark: #0f8a43;
+      --lime: #caff7a;
+      --black: #0c100b;
+      --radius: 20px;
+      --shadow: 0 20px 70px rgba(17, 21, 15, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 4%, rgba(77,255,135,.16), transparent 25rem),
+        radial-gradient(circle at 88% 15%, rgba(202,255,122,.18), transparent 23rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 780; letter-spacing: -.03em; }
+    .brand-mark {
+      width: 32px; height: 32px; display:grid; place-items:center;
+      font-size:28px; line-height:1; flex:0 0 auto;
+      font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+    }
+    .nav-right { display:flex; align-items:center; gap:22px; color:var(--muted); font-size:14px; }
+    .button {
+      border: 1px solid var(--black); background: var(--black); color: white;
+      border-radius: 999px; padding: 12px 19px; font-weight: 700; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; gap:9px;
+      transition: .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(12,16,11,.18); }
+    .button.light { background: white; color:var(--ink); border-color:var(--line); }
+    .button.green { background: var(--green); color: var(--black); border-color: var(--green); }
+    .hero { padding: 76px 0 66px; text-align:center; position:relative; }
+    .eyebrow {
+      display:inline-flex; gap:8px; align-items:center; padding:7px 11px; border:1px solid #c7d2c3;
+      border-radius:999px; background:rgba(255,255,255,.7); font-size:12px; font-weight:750; letter-spacing:.08em; text-transform:uppercase;
+    }
+    .pulse { width:7px; height:7px; background:var(--green-dark); border-radius:50%; box-shadow:0 0 0 5px rgba(77,255,135,.22); }
+    h1 { max-width: 980px; margin: 24px auto 20px; font-size: clamp(52px, 8.2vw, 108px); line-height:.91; letter-spacing:-.075em; font-weight:820; }
+    .highlight { position:relative; white-space:nowrap; }
+    .highlight:after { content:""; position:absolute; z-index:-1; left:-2%; right:-2%; bottom:.03em; height:.28em; background:var(--green); transform:rotate(-1.2deg); border-radius:6px; }
+    .hero-copy { max-width:720px; margin:0 auto; font-size:20px; line-height:1.55; color:var(--muted); }
+    .hero-actions { display:flex; justify-content:center; align-items:center; gap:12px; margin-top:31px; flex-wrap:wrap; }
+    .hero-note { margin-top:14px; color:#7d877b; font-size:12px; }
+    .route-visual {
+      margin: 54px auto 0; max-width:1050px; background:rgba(255,255,255,.82); border:1px solid var(--line);
+      border-radius:28px; box-shadow:var(--shadow); padding:18px; backdrop-filter: blur(14px);
+    }
+    .route-top { display:flex; align-items:center; justify-content:space-between; padding:8px 8px 18px; font-size:12px; color:var(--muted); }
+    .window-dots { display:flex; gap:6px; }
+    .window-dots i { width:8px; height:8px; border-radius:50%; background:#ccd4c9; display:block; }
+    .router-grid { display:grid; grid-template-columns: 1fr 1.05fr 1fr; gap:12px; align-items:stretch; }
+    .panel { background:#f8faf6; border:1px solid var(--line); border-radius:18px; padding:18px; min-height:210px; text-align:left; }
+    .panel-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em; font-weight:750; }
+    .request { margin-top:16px; padding:14px; background:white; border:1px solid var(--line); border-radius:13px; font-size:14px; line-height:1.5; }
+    .tag-row { display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+    .tag { padding:5px 8px; border-radius:999px; background:#eef2eb; font-size:10px; color:#566052; }
+    .router-core { background:var(--black); color:white; border-color:var(--black); position:relative; overflow:hidden; }
+    .router-core:after { content:""; position:absolute; width:180px; height:180px; border-radius:50%; background:rgba(77,255,135,.18); filter:blur(15px); right:-60px; bottom:-90px; }
+    .core-title { margin-top:18px; font-size:28px; letter-spacing:-.04em; font-weight:760; }
+    .decision { margin-top:18px; display:grid; gap:9px; }
+    .decision-row { display:flex; justify-content:space-between; gap:12px; font-size:12px; color:#c9d0c7; }
+    .meter { height:5px; border-radius:10px; background:#252b24; overflow:hidden; margin-top:4px; }
+    .meter span { height:100%; display:block; background:var(--green); border-radius:10px; }
+    .model-list { display:grid; gap:8px; margin-top:15px; }
+    .model { padding:10px 11px; border:1px solid var(--line); background:white; border-radius:11px; display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+    .model.active { border-color:var(--green-dark); box-shadow:0 0 0 2px rgba(77,255,135,.18); }
+    .model b { font-size:11px; color:var(--green-dark); }
+    .section { padding: 98px 0; }
+    .section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:36px; }
+    .kicker { color:var(--green-dark); font-size:12px; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin-bottom:12px; }
+    h2 { margin:0; max-width:800px; font-size:clamp(38px,5.5vw,68px); line-height:1; letter-spacing:-.055em; }
+    .section-head p { color:var(--muted); max-width:420px; line-height:1.6; margin:0; }
+    .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:26px; box-shadow:0 8px 30px rgba(17,21,15,.03); overflow:hidden; }
+    .card.wide { grid-column:span 2; }
+    .card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+    .card-num { font-size:11px; color:#8d968a; letter-spacing:.1em; }
+    .card h3 { margin:13px 0 9px; font-size:28px; letter-spacing:-.04em; }
+    .card p { margin:0; color:var(--muted); line-height:1.6; max-width:570px; }
+    .chart { margin-top:28px; border-top:1px solid #edf0eb; padding-top:20px; }
+    .chart-legend { display:flex; justify-content:space-between; gap:12px; font-size:11px; color:var(--muted); margin-bottom:9px; }
+    .legend-set { display:flex; gap:12px; }
+    .legend-set span:before { content:""; width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:5px; background:#a6afa2; }
+    .legend-set span:first-child:before { background:var(--green-dark); }
+    svg { display:block; width:100%; height:auto; }
+    .caption { font-size:10px; color:#97a093; margin-top:10px; }
+    .reliability { display:grid; grid-template-columns: .85fr 1.15fr; gap:18px; margin-top:28px; }
+    .uptime { background:var(--black); color:white; border-radius:16px; padding:24px; }
+    .uptime-big { font-size:54px; letter-spacing:-.06em; margin:12px 0 4px; }
+    .uptime small { color:#aeb7ab; }
+    .fallbacks { display:grid; gap:9px; }
+    .fallback { border:1px solid var(--line); border-radius:13px; padding:13px 14px; display:grid; grid-template-columns: 28px 1fr auto; align-items:center; gap:10px; }
+    .fallback .index { width:25px; height:25px; border-radius:7px; background:#edf1ea; display:grid; place-items:center; font-size:10px; color:var(--muted); }
+    .fallback strong { font-size:13px; }
+    .fallback em { font-style:normal; font-size:10px; color:var(--green-dark); background:#eaffef; padding:4px 7px; border-radius:999px; }
+    .flywheel { display:grid; grid-template-columns:1fr 1fr; gap:34px; align-items:center; }
+    .flywheel-copy h2 { margin-bottom:18px; }
+    .steps { margin-top:26px; display:grid; gap:12px; }
+    .step { display:grid; grid-template-columns:32px 1fr; gap:12px; align-items:start; }
+    .step i { width:30px; height:30px; border:1px solid #bcc6b8; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:11px; }
+    .step b { display:block; margin-bottom:4px; }
+    .step span { color:var(--muted); font-size:13px; line-height:1.5; }
+    .wheel-wrap { aspect-ratio:1; border-radius:50%; border:1px solid var(--line); background:white; display:grid; place-items:center; position:relative; box-shadow:var(--shadow); }
+    .wheel-ring { position:absolute; inset:12%; border:1px dashed #aeb8aa; border-radius:50%; animation:spin 24s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .wheel-core { width:36%; aspect-ratio:1; border-radius:50%; background:var(--black); color:white; display:grid; place-items:center; text-align:center; font-size:18px; font-weight:760; line-height:1.1; z-index:2; box-shadow:0 0 0 18px rgba(77,255,135,.12); }
+    .orbit { position:absolute; width:112px; background:#f8faf6; border:1px solid var(--line); border-radius:12px; padding:10px; font-size:11px; text-align:center; }
+    .o1 { top:4%; left:50%; transform:translateX(-50%); } .o2 { right:-1%; top:47%; } .o3 { bottom:4%; left:50%; transform:translateX(-50%); } .o4 { left:-1%; top:47%; }
+    .cta { padding:92px 0 110px; }
+    .cta-box { background:var(--black); color:white; border-radius:30px; overflow:hidden; display:grid; grid-template-columns:1fr .83fr; position:relative; }
+    .cta-copy { padding:58px; position:relative; z-index:1; }
+    .cta-copy h2 { font-size:clamp(42px,6vw,76px); }
+    .cta-copy p { color:#b9c1b7; font-size:17px; line-height:1.6; max-width:530px; }
+    .mini-proof { display:flex; flex-wrap:wrap; gap:8px; margin-top:28px; }
+    .mini-proof span { border:1px solid #30372f; border-radius:999px; padding:7px 10px; color:#c9d1c6; font-size:11px; }
+    .form-wrap { background:#eef4ea; color:var(--ink); margin:16px; border-radius:22px; padding:28px; align-self:stretch; display:flex; flex-direction:column; justify-content:center; }
+    .form-wrap h3 { font-size:24px; margin:0 0 6px; letter-spacing:-.04em; }
+    .form-wrap > p { color:var(--muted); margin:0 0 20px; font-size:13px; }
+    form { display:grid; gap:10px; }
+    label { display:grid; gap:6px; font-size:11px; font-weight:700; color:#4e584b; }
+    input, select, textarea { width:100%; border:1px solid #ced7ca; background:white; border-radius:10px; padding:12px 13px; outline:none; color:var(--ink); }
+    input:focus, select:focus, textarea:focus { border-color:var(--green-dark); box-shadow:0 0 0 3px rgba(77,255,135,.18); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .form-status { min-height:18px; font-size:12px; color:var(--green-dark); }
+    footer { padding:0 0 38px; display:flex; justify-content:space-between; color:#7e887b; font-size:12px; }
+    @media (max-width: 850px) {
+      .nav-right a:not(.button) { display:none; }
+      .router-grid, .flywheel, .cta-box { grid-template-columns:1fr; }
+      .cards { grid-template-columns:1fr; }
+      .card.wide { grid-column:auto; }
+      .section-head { align-items:flex-start; flex-direction:column; }
+      .reliability { grid-template-columns:1fr; }
+      .cta-copy { padding:38px 28px 18px; }
+      .form-wrap { margin:14px; }
+    }
+    @media (max-width: 560px) {
+      .shell { width:min(100% - 24px,1180px); }
+      .hero { padding-top:55px; }
+      h1 { font-size:53px; }
+      .hero-copy { font-size:17px; }
+      .router-grid .panel:first-child { display:none; }
+      .form-grid { grid-template-columns:1fr; }
+      .wheel-wrap { margin:10px; }
+      .orbit { width:92px; font-size:9px; }
+      footer { flex-direction:column; gap:9px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell nav">
+    <a href="#top" class="brand" aria-label="LiteLLM AutoRouter home"><span class="brand-mark" aria-hidden="true">🚅</span><span>LiteLLM <span style="font-weight:500;color:#657062">AutoRouter</span></span></a>
+    <nav class="nav-right">
+      <a href="#why">Why AutoRouter</a><a href="#flywheel">Data flywheel</a>
+      <a class="button" href="#access">Request early access <span>↗</span></a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="shell hero">
+      <div class="eyebrow"><span class="pulse"></span> Private beta · Native to LiteLLM Proxy</div>
+      <h1>The best model.<br><span class="highlight">On your infrastructure.</span></h1>
+      <p class="hero-copy">Add intelligent model routing to your existing LiteLLM Proxy. It works out of the box, runs where your proxy runs, and requires no ML training to get started.</p>
+      <div class="hero-actions">
+        <a class="button green" href="#access">Request early access <span>→</span></a>
+        <a class="button light" href="#why">See how it works</a>
+      </div>
+      <div class="hero-note">No new gateway. No prompt data leaving your infrastructure. No training pipeline required.</div>
+
+      <div class="route-visual" aria-label="Illustration of an incoming request routed to the best model">
+        <div class="route-top"><span class="window-dots"><i></i><i></i><i></i></span><span>Live routing decision · 42ms</span><span>litellm / autorouter</span></div>
+        <div class="router-grid">
+          <div class="panel">
+            <div class="panel-label">Incoming request</div>
+            <div class="request">“Extract renewal date, notice period, and pricing terms from this contract.”</div>
+            <div class="tag-row"><span class="tag">structured output</span><span class="tag">legal</span><span class="tag">18k tokens</span></div>
+          </div>
+          <div class="panel router-core">
+            <div class="panel-label" style="color:#8d998a">AutoRouter decision</div>
+            <div class="core-title">Route for the outcome—not the model.</div>
+            <div class="decision">
+              <div><div class="decision-row"><span>Predicted quality</span><b>96%</b></div><div class="meter"><span style="width:96%"></span></div></div>
+              <div><div class="decision-row"><span>Cost efficiency</span><b>89%</b></div><div class="meter"><span style="width:89%"></span></div></div>
+              <div><div class="decision-row"><span>Provider health</span><b>99%</b></div><div class="meter"><span style="width:99%"></span></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-label">Candidate routes</div>
+            <div class="model-list">
+              <div class="model active"><span>Model B · Provider 2</span><b>SELECTED</b></div>
+              <div class="model"><span>Model A · Provider 1</span><span>high cost</span></div>
+              <div class="model"><span>Model C · Provider 3</span><span>lower quality</span></div>
+              <div class="model"><span>Fallback pool</span><span>ready</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell section" id="why">
+      <div class="section-head">
+        <div><div class="kicker">Why AutoRouter</div><h2>Intelligent routing without another infrastructure project.</h2></div>
+        <p>Turn it on inside the proxy you already run. Start with lightweight, out-of-the-box routing, then adapt it to your own workloads as you collect real production signals.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="card-top"><div><div class="card-num">01 / LIGHTWEIGHT</div><h3>Start without training a router.</h3><p>No historical dataset, model fine-tuning, or dedicated ML team is required. AutoRouter can begin making decisions from day one with minimal routing overhead.</p></div></div>
+          <div class="chart">
+            <div class="chart-legend"><span>End-to-end latency</span><div class="legend-set"><span>AutoRouter</span><span>Direct</span></div></div>
+            <svg viewBox="0 0 520 205" role="img" aria-label="Illustrative latency graph">
+              <g stroke="#e4e9e1" stroke-width="1"><line x1="38" y1="20" x2="38" y2="170"/><line x1="38" y1="170" x2="505" y2="170"/><line x1="38" y1="120" x2="505" y2="120"/><line x1="38" y1="70" x2="505" y2="70"/></g>
+              <path d="M38 148 C120 142 175 139 245 135 S390 128 505 119" fill="none" stroke="#98a294" stroke-width="4" stroke-linecap="round"/>
+              <path d="M38 150 C105 145 158 143 220 140 S334 136 410 131 S470 128 505 126" fill="none" stroke="#0f8a43" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="505" cy="126" r="6" fill="#4dff87" stroke="#0f8a43" stroke-width="3"/>
+              <text x="44" y="194" font-size="10" fill="#7e887b">p50</text><text x="247" y="194" font-size="10" fill="#7e887b">p90</text><text x="480" y="194" font-size="10" fill="#7e887b">p99</text>
+            </svg>
+            <div class="caption">Illustrative only. Replace with measured beta results before publishing a quantified claim.</div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><div><div class="card-num">02 / QUALITY × COST</div><h3>Frontier quality where it matters. Savings where it doesn’t.</h3><p>Reserve premium models for hard requests. Route routine traffic to lower-cost models that still meet your quality bar.</p></div></div>
+          <div class="chart">
+            <div class="chart-legend"><span>Higher is better · farther left is cheaper</span><span>Quality →</span></div>
+            <svg viewBox="0 0 520 205" role="img" aria-label="Illustrative cost versus quality scatter plot">
+              <g stroke="#e4e9e1" stroke-width="1"><line x1="38" y1="20" x2="38" y2="170"/><line x1="38" y1="170" x2="505" y2="170"/><line x1="38" y1="120" x2="505" y2="120"/><line x1="38" y1="70" x2="505" y2="70"/></g>
+              <text x="4" y="28" font-size="10" fill="#7e887b">High</text><text x="7" y="168" font-size="10" fill="#7e887b">Low</text><text x="39" y="194" font-size="10" fill="#7e887b">Lower cost</text><text x="448" y="194" font-size="10" fill="#7e887b">Higher cost</text>
+              <g fill="#aab3a7"><circle cx="405" cy="56" r="10"/><circle cx="350" cy="76" r="9"/><circle cx="258" cy="101" r="9"/><circle cx="175" cy="126" r="8"/></g>
+              <circle cx="145" cy="59" r="15" fill="#4dff87" stroke="#0f8a43" stroke-width="3"/>
+              <path d="M158 57 L225 40" stroke="#0f8a43" stroke-width="1.5"/><rect x="225" y="25" width="108" height="28" rx="8" fill="#0c100b"/><text x="238" y="43" font-size="11" fill="white" font-weight="700">AutoRouter mix</text>
+            </svg>
+            <div class="caption">Conceptual portfolio curve. Actual quality and savings depend on your models, traffic, and evaluation criteria.</div>
+          </div>
+        </article>
+
+        <article class="card wide">
+          <div class="card-top"><div><div class="card-num">03 / RELIABILITY</div><h3>One provider outage should not become your outage.</h3><p>AutoRouter combines request-level intelligence with LiteLLM’s fallbacks, retries, cooldowns, and provider-aware load balancing to keep production traffic moving.</p></div></div>
+          <div class="reliability">
+            <div class="uptime"><div class="panel-label" style="color:#889285">Designed for continuity</div><div class="uptime-big">N + 1</div><small>models, providers, and deployments ready for failover</small></div>
+            <div class="fallbacks">
+              <div class="fallback"><span class="index">1</span><strong>Best route for this request</strong><em>ACTIVE</em></div>
+              <div class="fallback"><span class="index">2</span><strong>Equivalent model, alternate provider</strong><em>READY</em></div>
+              <div class="fallback"><span class="index">3</span><strong>Quality-safe fallback model</strong><em>READY</em></div>
+              <div class="fallback"><span class="index">4</span><strong>Customer-defined final fallback</strong><em>READY</em></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell section flywheel" id="flywheel">
+      <div class="flywheel-copy">
+        <div class="kicker">Start immediately. Adapt privately.</div>
+        <h2>Useful out of the box. Better on your traffic.</h2>
+        <p style="color:var(--muted);line-height:1.65;font-size:17px">You do not need to train anything before you start. AutoRouter begins with lightweight routing logic, then can use your task types, evals, feedback, cost limits, and production outcomes to improve decisions inside your infrastructure.</p>
+        <p style="margin-top:16px"><a href="https://docs.litellm.ai/docs/adaptive_router" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--green-dark);text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px">See how LiteLLM’s Adaptive Router learns from your traffic →</a></p>
+        <div class="steps">
+          <div class="step"><i>1</i><div><b>Turn it on in LiteLLM Proxy</b><span>Use your existing endpoint, provider credentials, policies, fallbacks, and observability.</span></div></div>
+          <div class="step"><i>2</i><div><b>Route immediately</b><span>Begin choosing among models and providers without first building a training pipeline.</span></div></div>
+          <div class="step"><i>3</i><div><b>Adapt to your context</b><span>Use private evaluations and production outcomes to make routing increasingly specific to your work.</span></div></div>
+        </div>
+      </div>
+      <div class="wheel-wrap" aria-label="Private data flywheel illustration">
+        <div class="wheel-ring"></div><div class="wheel-core">LiteLLM<br>AutoRouter</div>
+        <div class="orbit o1">Production<br>traffic</div><div class="orbit o2">Route<br>decision</div><div class="orbit o3">Outcome<br>signals</div><div class="orbit o4">Private<br>evaluations</div>
+      </div>
+    </section>
+
+    <section class="shell cta" id="access">
+      <div class="cta-box">
+        <div class="cta-copy">
+          <div class="kicker" style="color:var(--green)">Limited early access</div>
+          <h2>Add intelligent routing to the proxy you already run.</h2>
+          <p>Join the AutoRouter private beta. Get lightweight, self-hosted model routing without adding another gateway or waiting to train a custom router.</p>
+          <div class="mini-proof"><span>Runs on your infrastructure</span><span>Native to LiteLLM Proxy</span><span>No ML training to start</span><span>Your models and providers</span></div>
+        </div>
+        <div class="form-wrap">
+          <h3>Request early access</h3>
+          <p>Tell us about your workload. We’ll follow up with beta fit and next steps.</p>
+          <form id="access-form">
+            <p style="display:none"><label>Don’t fill this out: <input name="bot-field" /></label></p>
+            <div class="form-grid">
+              <label>Work email<input required type="email" name="email" placeholder="you@company.com" /></label>
+              <label>Company<input required type="text" name="company" placeholder="Company name" /></label>
+            </div>
+            <label>Monthly LLM volume<select name="volume" required><option value="">Select volume</option><option>&lt; 1M requests</option><option>1M–10M requests</option><option>10M–100M requests</option><option>100M+ requests</option></select></label>
+            <label>What should AutoRouter optimize first?<select name="priority" required><option value="">Select priority</option><option>Lower model cost</option><option>Higher task quality</option><option>Lower latency</option><option>Higher reliability</option><option>All of the above</option></select></label>
+            <label>What are you routing today?<textarea name="details" rows="3" placeholder="Models, providers, use cases, and the biggest problem with your current setup"></textarea></label>
+            <button class="button green" type="submit">Request early access <span>→</span></button>
+            <div class="form-status" id="form-status" role="status"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell"><span>© 2026 LiteLLM · AutoRouter private beta</span><span>Built for production AI teams.</span></footer>
+
+  <script>
+    // Submit the form to a webhook (e.g. Zapier "Catch Hook"), then redirect.
+    const WEBHOOK_URL = "YOUR_ZAPIER_WEBHOOK_URL"; // e.g. https://hooks.zapier.com/hooks/catch/123456/abcdef/
+
+    document.getElementById("access-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const status = document.getElementById("form-status");
+      const btn = form.querySelector('button[type="submit"]');
+
+      // Honeypot: silently drop bot submissions
+      if (form.elements["bot-field"].value) { window.location.href = "/thanks.html"; return; }
+
+      const payload = Object.fromEntries(new FormData(form).entries());
+      delete payload["bot-field"];
+      payload.submitted_at = new Date().toISOString();
+      payload.page = window.location.href;
+
+      btn.disabled = true;
+      status.textContent = "Submitting…";
+      try {
+        await fetch(WEBHOOK_URL, {
+          method: "POST",
+          mode: "no-cors", // Zapier hooks accept this; response is opaque but the data lands
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        window.location.href = "/thanks.html";
+      } catch (err) {
+        btn.disabled = false;
+        status.textContent = "Something went wrong — please email us instead.";
+      }
+    });
+  </script>
+
+</body>
+</html>
