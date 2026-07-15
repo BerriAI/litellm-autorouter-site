@@ -74,23 +74,36 @@
     .route-top { display:flex; align-items:center; justify-content:space-between; padding:8px 8px 18px; font-size:12px; color:var(--muted); }
     .window-dots { display:flex; gap:6px; }
     .window-dots i { width:8px; height:8px; border-radius:50%; background:#ccd4c9; display:block; }
-    .router-grid { display:grid; grid-template-columns: 1fr 1.05fr 1fr; gap:12px; align-items:stretch; }
-    .panel { background:#f8faf6; border:1px solid var(--line); border-radius:18px; padding:18px; min-height:210px; text-align:left; }
-    .panel-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em; font-weight:750; }
-    .request { margin-top:16px; padding:14px; background:white; border:1px solid var(--line); border-radius:13px; font-size:14px; line-height:1.5; }
-    .tag-row { display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
-    .tag { padding:5px 8px; border-radius:999px; background:#eef2eb; font-size:10px; color:#566052; }
-    .router-core { background:var(--black); color:white; border-color:var(--black); position:relative; overflow:hidden; }
-    .router-core:after { content:""; position:absolute; width:180px; height:180px; border-radius:50%; background:rgba(77,255,135,.18); filter:blur(15px); right:-60px; bottom:-90px; }
-    .core-title { margin-top:18px; font-size:28px; letter-spacing:-.04em; font-weight:760; }
-    .decision { margin-top:18px; display:grid; gap:9px; }
-    .decision-row { display:flex; justify-content:space-between; gap:12px; font-size:12px; color:#c9d0c7; }
-    .meter { height:5px; border-radius:10px; background:#252b24; overflow:hidden; margin-top:4px; }
-    .meter span { height:100%; display:block; background:var(--green); border-radius:10px; }
-    .model-list { display:grid; gap:8px; margin-top:15px; }
-    .model { padding:10px 11px; border:1px solid var(--line); background:white; border-radius:11px; display:flex; justify-content:space-between; align-items:center; font-size:12px; }
-    .model.active { border-color:var(--green-dark); box-shadow:0 0 0 2px rgba(77,255,135,.18); }
-    .model b { font-size:11px; color:var(--green-dark); }
+    .flow-stage {
+      position:relative; border:1px solid #e3e7e0; border-radius:20px;
+      background:#fff; overflow:hidden; padding:52px 42px 68px;
+      display:grid;
+      grid-template-columns:minmax(190px,1fr) 72px minmax(220px,1.05fr) 112px minmax(180px,.92fr);
+      align-items:center; gap:0;
+    }
+    .flow-lines { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; overflow:visible; }
+    .flow-line { fill:none; stroke:#11150f; stroke-width:1.5; vector-effect:non-scaling-stroke; }
+    .flow-packet { fill:#11150f; }
+    .flow-node { position:relative; z-index:2; border:1px solid #11150f; background:white; border-radius:14px; box-shadow:none; }
+    .harness-node { grid-column:1; padding:20px; text-align:left; }
+    .router-node { grid-column:3; padding:24px; background:var(--black); color:white; border-color:var(--black); overflow:hidden; }
+    .llm-stack { grid-column:5; display:grid; gap:10px; position:relative; z-index:2; }
+    .llm-node {
+      position:relative; padding:13px 14px; border:1px solid #11150f; background:white;
+      border-radius:10px; box-shadow:none; display:flex; align-items:center; justify-content:space-between;
+      gap:12px; font-size:12px; text-align:left; transition:transform .25s ease, box-shadow .25s ease;
+    }
+    .llm-node.active { border-color:#11150f; box-shadow:0 0 0 3px rgba(17,21,15,.08); transform:translateX(4px); }
+    .llm-node span:last-child { color:var(--muted); font-size:10px; }
+    .node-label { font-size:10px; text-transform:uppercase; letter-spacing:.11em; font-weight:800; color:var(--muted); }
+    .router-node .node-label { color:#9aa499; }
+    .node-title { margin-top:10px; font-size:23px; line-height:1.08; letter-spacing:-.04em; font-weight:780; }
+    .harness-node .prompt-chip { margin-top:16px; border-top:1px solid #d9ded6; padding-top:13px; font-size:12px; line-height:1.5; color:#394236; }
+    .router-rule { margin-top:17px; display:flex; gap:7px; flex-wrap:wrap; position:relative; z-index:1; }
+    .router-rule span { padding:6px 8px; border-radius:999px; border:1px solid #394138; color:#c8d1c5; font-size:10px; }
+    .router-status { margin-top:17px; display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#c6cec3; position:relative; z-index:1; }
+    .router-status b { color:var(--green); }
+    .flow-caption { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); font-size:11px; color:var(--muted); z-index:3; white-space:nowrap; }
     .section { padding: 98px 0; }
     .section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:36px; }
     .kicker { color:var(--green-dark); font-size:12px; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin-bottom:12px; }
@@ -152,6 +165,11 @@
     @media (max-width: 850px) {
       .nav-right a:not(.button) { display:none; }
       .router-grid, .flywheel, .cta-box { grid-template-columns:1fr; }
+      .flow-stage { grid-template-columns:1fr; gap:24px; padding:34px 24px; }
+      .flow-lines,.flow-caption { display:none; }
+      .harness-node,.router-node,.llm-stack { grid-column:1; }
+      .llm-stack { grid-template-columns:repeat(3,1fr); padding-left:0; }
+      .llm-stack:before,.llm-node:before { display:none; }
       .cards { grid-template-columns:1fr; }
       .card.wide { grid-column:auto; }
       .section-head { align-items:flex-start; flex-direction:column; }
@@ -192,32 +210,37 @@
       </div>
       <div class="hero-note">No new gateway. No prompt data leaving your infrastructure. No training pipeline required.</div>
 
-      <div class="route-visual" aria-label="Illustration of an incoming request routed to the best model">
-        <div class="route-top"><span class="window-dots"><i></i><i></i><i></i></span><span>Live routing decision · 42ms</span><span>litellm / autorouter</span></div>
-        <div class="router-grid">
-          <div class="panel">
-            <div class="panel-label">Incoming request</div>
-            <div class="request">“Extract renewal date, notice period, and pricing terms from this contract.”</div>
-            <div class="tag-row"><span class="tag">structured output</span><span class="tag">legal</span><span class="tag">18k tokens</span></div>
+      <div class="route-visual" aria-label="Animated diagram showing a harness sending requests through LiteLLM AutoRouter to the best language model">
+        <div class="route-top"><span class="window-dots"><i></i><i></i><i></i></span><span>One endpoint · automatic model selection</span><span>litellm / autorouter</span></div>
+        <div class="flow-stage" id="autorouter-flow">
+          <svg class="flow-lines" aria-hidden="true">
+            <path class="flow-line" id="line-in"></path>
+            <path class="flow-line" id="line-trunk"></path>
+            <path class="flow-line" id="line-a"></path>
+            <path class="flow-line" id="line-b"></path>
+            <path class="flow-line" id="line-c"></path>
+            <circle class="flow-packet" id="flow-packet" r="5"></circle>
+          </svg>
+
+          <div class="flow-node harness-node">
+            <div class="node-label">Your application</div>
+            <div class="node-title">Agent or harness</div>
+            <div class="prompt-chip">“Review this contract and extract the renewal terms.”</div>
           </div>
-          <div class="panel router-core">
-            <div class="panel-label" style="color:#8d998a">AutoRouter decision</div>
-            <div class="core-title">Route for the outcome—not the model.</div>
-            <div class="decision">
-              <div><div class="decision-row"><span>Predicted quality</span><b>96%</b></div><div class="meter"><span style="width:96%"></span></div></div>
-              <div><div class="decision-row"><span>Cost efficiency</span><b>89%</b></div><div class="meter"><span style="width:89%"></span></div></div>
-              <div><div class="decision-row"><span>Provider health</span><b>99%</b></div><div class="meter"><span style="width:99%"></span></div></div>
-            </div>
+
+          <div class="flow-node router-node">
+            <div class="node-label">Runs inside your LiteLLM Proxy</div>
+            <div class="node-title">🚅 AutoRouter</div>
+            <div class="router-rule"><span>quality</span><span>cost</span><span>latency</span><span>health</span></div>
+            <div class="router-status"><span>Best route selected</span><b>Model B →</b></div>
           </div>
-          <div class="panel">
-            <div class="panel-label">Candidate routes</div>
-            <div class="model-list">
-              <div class="model active"><span>Model B · Provider 2</span><b>SELECTED</b></div>
-              <div class="model"><span>Model A · Provider 1</span><span>high cost</span></div>
-              <div class="model"><span>Model C · Provider 3</span><span>lower quality</span></div>
-              <div class="model"><span>Fallback pool</span><span>ready</span></div>
-            </div>
+
+          <div class="llm-stack" aria-label="Available language models">
+            <div class="llm-node"><strong>Model A</strong><span>premium</span></div>
+            <div class="llm-node active"><strong>Model B</strong><span>best fit</span></div>
+            <div class="llm-node"><strong>Model C</strong><span>fast</span></div>
           </div>
+          <div class="flow-caption">No new gateway. No model migration. AutoRouter chooses the best route for every request.</div>
         </div>
       </div>
     </section>
@@ -321,6 +344,112 @@
 
   <footer class="shell"><span>© 2026 LiteLLM · AutoRouter private beta</span><span>Built for production AI teams.</span></footer>
 
+
+  <script>
+    (() => {
+      const stage = document.getElementById('autorouter-flow');
+      if (!stage) return;
+
+      const harness = stage.querySelector('.harness-node');
+      const router = stage.querySelector('.router-node');
+      const models = [...stage.querySelectorAll('.llm-node')];
+      const status = stage.querySelector('.router-status b');
+      const packet = document.getElementById('flow-packet');
+      const paths = {
+        input: document.getElementById('line-in'),
+        trunk: document.getElementById('line-trunk'),
+        branches: [document.getElementById('line-a'), document.getElementById('line-b'), document.getElementById('line-c')]
+      };
+
+      let routePaths = [];
+      let activeIndex = 1;
+      let animationStart = performance.now();
+      const cycleMs = 4200;
+
+      const point = (el, side) => {
+        const sr = stage.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        return {
+          x: side === 'left' ? r.left - sr.left : side === 'right' ? r.right - sr.left : r.left - sr.left + r.width / 2,
+          y: r.top - sr.top + r.height / 2
+        };
+      };
+
+      function draw() {
+        if (window.matchMedia('(max-width: 850px)').matches) return;
+        const a = point(harness, 'right');
+        const b = point(router, 'left');
+        const c = point(router, 'right');
+        const targets = models.map(m => point(m, 'left'));
+        const trunkX = c.x + Math.max(34, (targets[0].x - c.x) * 0.45);
+        const topY = targets[0].y;
+        const bottomY = targets[targets.length - 1].y;
+
+        paths.input.setAttribute('d', `M ${a.x} ${a.y} H ${b.x}`);
+        paths.trunk.setAttribute('d', `M ${c.x} ${c.y} H ${trunkX} M ${trunkX} ${topY} V ${bottomY}`);
+        targets.forEach((t, i) => paths.branches[i].setAttribute('d', `M ${trunkX} ${t.y} H ${t.x}`));
+
+        routePaths = [
+          { path: paths.input, length: paths.input.getTotalLength() },
+          { path: null, length: Math.abs(trunkX - c.x), from: c, to: {x: trunkX, y: c.y} },
+          { path: null, length: Math.abs(targets[activeIndex].y - c.y), from: {x: trunkX, y: c.y}, to: {x: trunkX, y: targets[activeIndex].y} },
+          { path: paths.branches[activeIndex], length: paths.branches[activeIndex].getTotalLength() }
+        ];
+      }
+
+      function setActive(index) {
+        activeIndex = index;
+        models.forEach((m, i) => m.classList.toggle('active', i === index));
+        status.textContent = `Model ${String.fromCharCode(65 + index)} →`;
+        draw();
+      }
+
+      function positionAlong(segment, t) {
+        if (segment.path) return segment.path.getPointAtLength(segment.length * t);
+        return {
+          x: segment.from.x + (segment.to.x - segment.from.x) * t,
+          y: segment.from.y + (segment.to.y - segment.from.y) * t
+        };
+      }
+
+      function animate(now) {
+        if (!window.matchMedia('(max-width: 850px)').matches && routePaths.length) {
+          const elapsed = (now - animationStart) % cycleMs;
+          const progress = elapsed / cycleMs;
+          const moving = Math.min(1, progress / 0.78);
+          const total = routePaths.reduce((sum, s) => sum + s.length, 0);
+          let distance = moving * total;
+          let p = null;
+          for (const segment of routePaths) {
+            if (distance <= segment.length) {
+              p = positionAlong(segment, segment.length ? distance / segment.length : 0);
+              break;
+            }
+            distance -= segment.length;
+          }
+          if (p) {
+            packet.setAttribute('cx', p.x);
+            packet.setAttribute('cy', p.y);
+            packet.style.opacity = progress < .82 ? '1' : '0';
+          }
+          if (progress > .96) {
+            animationStart = now;
+            setActive((activeIndex + 1) % models.length);
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+
+      const resizeObserver = new ResizeObserver(draw);
+      resizeObserver.observe(stage);
+      window.addEventListener('load', draw, { once: true });
+      window.addEventListener('resize', draw);
+      draw();
+      requestAnimationFrame(animate);
+    })();
+  </script>
+
+
   <script>
     // Submit the form to a webhook (e.g. Zapier "Catch Hook"), then redirect.
     const WEBHOOK_URL = "YOUR_ZAPIER_WEBHOOK_URL"; // e.g. https://hooks.zapier.com/hooks/catch/123456/abcdef/
@@ -344,7 +473,7 @@
       try {
         await fetch(WEBHOOK_URL, {
           method: "POST",
-          mode: "no-cors", // Zapier hooks accept this; response is opaque but the data lands
+          mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
